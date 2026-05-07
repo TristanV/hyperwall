@@ -2,6 +2,126 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Audio system
+const audioSystem = {
+  audioContext: null,
+  musicEnabled: true,
+  sfxEnabled: true,
+  masterGain: null,
+  musicOscillator: null,
+  musicGain: null,
+
+  init() {
+    if (!this.audioContext) {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      this.masterGain = this.audioContext.createGain();
+      this.masterGain.gain.value = 0.3;
+      this.masterGain.connect(this.audioContext.destination);
+    }
+  },
+
+  playBackgroundMusic() {
+    if (!this.musicEnabled || this.musicOscillator) return;
+    this.init();
+
+    const now = this.audioContext.currentTime;
+    const tempo = 0.5; // 500ms per beat
+
+    const melody = [
+      { freq: 330, duration: tempo },
+      { freq: 330, duration: tempo },
+      { freq: 330, duration: tempo },
+      { freq: 330, duration: tempo },
+      { freq: 380, duration: tempo },
+      { freq: 420, duration: tempo },
+      { freq: 330, duration: tempo * 2 },
+      { freq: 330, duration: tempo },
+      { freq: 330, duration: tempo },
+      { freq: 330, duration: tempo * 2 },
+    ];
+
+    const playMelody = (startTime) => {
+      let currentTime = startTime;
+      melody.forEach((note) => {
+        this.playTone(note.freq, note.duration, currentTime, 0.1, 0.3);
+        currentTime += note.duration;
+      });
+
+      if (this.musicEnabled) {
+        setTimeout(() => playMelody(currentTime), (currentTime - now) * 1000);
+      }
+    };
+
+    playMelody(now);
+  },
+
+  stopBackgroundMusic() {
+    if (this.musicOscillator) {
+      this.musicOscillator.stop();
+      this.musicOscillator = null;
+    }
+  },
+
+  playTone(frequency, duration, startTime, attackTime, decayTime) {
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+
+    osc.type = 'square';
+    osc.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.3, startTime + attackTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration - decayTime);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+  },
+
+  playSFX(type) {
+    if (!this.sfxEnabled) return;
+    this.init();
+
+    const now = this.audioContext.currentTime;
+
+    switch (type) {
+      case 'paddle-hit':
+        this.playTone(400, 0.1, now, 0.02, 0.08);
+        this.playTone(500, 0.08, now + 0.05, 0.02, 0.06);
+        break;
+      case 'brick-break':
+        this.playTone(600, 0.15, now, 0.02, 0.1);
+        this.playTone(800, 0.1, now + 0.08, 0.02, 0.08);
+        break;
+      case 'win':
+        this.playTone(523, 0.2, now, 0.05, 0.15);
+        this.playTone(659, 0.2, now + 0.15, 0.05, 0.15);
+        this.playTone(784, 0.3, now + 0.3, 0.05, 0.25);
+        break;
+      case 'game-over':
+        this.playTone(400, 0.15, now, 0.05, 0.1);
+        this.playTone(300, 0.15, now + 0.15, 0.05, 0.1);
+        this.playTone(200, 0.3, now + 0.3, 0.05, 0.25);
+        break;
+    }
+  },
+
+  toggleMusic() {
+    this.musicEnabled = !this.musicEnabled;
+    if (this.musicEnabled) {
+      this.playBackgroundMusic();
+    } else {
+      this.stopBackgroundMusic();
+    }
+  },
+
+  toggleSFX() {
+    this.sfxEnabled = !this.sfxEnabled;
+  },
+};
+
 // Game state
 const gameState = {
   paddle: {
@@ -47,6 +167,23 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
   keys[e.key] = false;
 });
+
+// Audio button controls
+document.getElementById('musicToggle').addEventListener('click', () => {
+  audioSystem.toggleMusic();
+  const btn = document.getElementById('musicToggle');
+  btn.classList.toggle('active', audioSystem.musicEnabled);
+});
+
+document.getElementById('soundToggle').addEventListener('click', () => {
+  audioSystem.toggleSFX();
+  const btn = document.getElementById('soundToggle');
+  btn.classList.toggle('active', audioSystem.sfxEnabled);
+});
+
+// Initialize audio buttons state
+document.getElementById('musicToggle').classList.add('active');
+document.getElementById('soundToggle').classList.add('active');
 
 // Initialize bricks
 function createBricks() {
@@ -217,6 +354,9 @@ function updateBall() {
     // Add spin based on where ball hits paddle
     const hitPos = (ball.x - paddle.x) / paddle.width;
     ball.dx = (hitPos - 0.5) * 8;
+
+    // Play paddle hit sound
+    audioSystem.playSFX('paddle-hit');
   }
 
   // Bottom (lose life)
@@ -226,6 +366,7 @@ function updateBall() {
 
     if (gameState.lives <= 0) {
       gameState.gameOver = true;
+      audioSystem.playSFX('game-over');
     }
   }
 
@@ -243,10 +384,14 @@ function updateBall() {
       gameState.score += 10;
       ball.dy = -ball.dy;
 
+      // Play brick break sound
+      audioSystem.playSFX('brick-break');
+
       // Check win condition
       if (gameState.bricks.every((b) => !b.active)) {
         gameState.won = true;
         gameState.isRunning = false;
+        audioSystem.playSFX('win');
       }
     }
   });
@@ -299,6 +444,7 @@ function resetGame() {
   gameState.ball.dy = -4;
   gameState.paddle.x = canvas.width / 2 - 50;
   createBricks();
+  audioSystem.playBackgroundMusic();
 }
 
 // Game loop
@@ -310,4 +456,5 @@ function gameLoop() {
 
 // Initialize and start
 createBricks();
+audioSystem.playBackgroundMusic();
 gameLoop();

@@ -18,10 +18,46 @@ body {
   text-align: center;
 }
 
+.title-bar {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(180deg, #1a0033 0%, #000 100%);
+  border: 3px solid #0ff;
+  box-shadow: 0 0 15px #0ff, inset 0 0 10px rgba(0, 255, 255, 0.2);
+}
+
+.title-bar h1 {
+  font-size: 64px;
+  letter-spacing: 8px;
+  margin: 0;
+  margin-bottom: 5px;
+  font-weight: bold;
+  animation: flicker 0.15s infinite;
+  color: #0ff;
+  text-shadow: 2px 2px 0 #f0f, 0 0 20px #0ff;
+}
+
+.subtitle {
+  font-size: 14px;
+  letter-spacing: 2px;
+  margin: 0;
+  color: #ff0;
+  text-shadow: 1px 1px 0 #f0f;
+}
+
 .header {
   margin-bottom: 20px;
   color: #0ff;
   text-shadow: 2px 2px 0 #f0f; /* magenta shadow for 80s effect */
+}
+
+.header h2 {
+  font-size: 36px;
+  letter-spacing: 3px;
+  margin: 10px 0;
+  font-weight: bold;
+  color: #0ff;
+  text-shadow: 2px 2px 0 #f0f;
 }
 
 h1 {
@@ -39,6 +75,43 @@ h1 {
   20%, 24%, 55% {
     text-shadow: 2px 2px 0 #f0f;
   }
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.audio-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-family: "Courier New", monospace;
+  letter-spacing: 2px;
+  font-weight: bold;
+  border: 2px solid #0ff;
+  background-color: #000;
+  color: #0ff;
+  cursor: pointer;
+  text-shadow: 1px 1px 0 #f0f;
+  box-shadow: 0 0 10px #0ff;
+  transition: all 0.1s;
+}
+
+.audio-btn:hover {
+  box-shadow: 0 0 20px #0ff, inset 0 0 10px rgba(0, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.audio-btn:active {
+  transform: scale(0.95);
+}
+
+.audio-btn.active {
+  background-color: #0ff;
+  color: #000;
+  box-shadow: 0 0 20px #0ff, inset 0 0 10px rgba(0, 255, 255, 0.5);
 }
 
 .info {
