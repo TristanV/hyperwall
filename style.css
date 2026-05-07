@@ -1,0 +1,76 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Courier New", monospace;
+  background-color: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: #0ff; /* cyan */
+}
+
+.game-container {
+  text-align: center;
+}
+
+.header {
+  margin-bottom: 20px;
+  color: #0ff;
+  text-shadow: 2px 2px 0 #f0f; /* magenta shadow for 80s effect */
+}
+
+h1 {
+  font-size: 48px;
+  letter-spacing: 4px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  animation: flicker 0.15s infinite;
+}
+
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    text-shadow: 2px 2px 0 #f0f, 0 0 10px #0ff;
+  }
+  20%, 24%, 55% {
+    text-shadow: 2px 2px 0 #f0f;
+  }
+}
+
+.info {
+  display: flex;
+  justify-content: space-around;
+  gap: 40px;
+  font-size: 24px;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+}
+
+.info span {
+  color: #ff0;
+  text-shadow: 2px 2px 0 #f0f;
+}
+
+#gameCanvas {
+  display: block;
+  background-color: #000;
+  border: 4px solid #0ff;
+  box-shadow: 0 0 20px #0ff, inset 0 0 20px rgba(0, 255, 255, 0.3);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.footer {
+  margin-top: 20px;
+  color: #0ff;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.footer p {
+  text-shadow: 1px 1px 0 #f0f;
+}
