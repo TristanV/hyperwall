@@ -544,7 +544,7 @@ function render() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   drawBricks();
-  drawBalls();
+  drawBall();
   drawPaddle();
 
   drawUI();
