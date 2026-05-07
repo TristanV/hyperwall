@@ -5,6 +5,7 @@ const ctx = canvas.getContext('2d');
 // Rooms configuration
 let roomsConfig = null;
 let currentRoomId = 1;
+let gameReady = false;
 
 // Audio system
 const audioSystem = {
@@ -594,6 +595,10 @@ function resetGame() {
 
 // Game loop
 function gameLoop() {
+  if (!gameReady) {
+    requestAnimationFrame(gameLoop);
+    return;
+  }
   update();
   render();
   requestAnimationFrame(gameLoop);
@@ -601,11 +606,20 @@ function gameLoop() {
 
 // Initialize and start
 async function init() {
-  await loadRoomsConfig();
-  createBricks();
-  initializeBall();
-  audioSystem.playBackgroundMusic();
-  gameLoop();
+  try {
+    await loadRoomsConfig();
+    if (!roomsConfig) {
+      console.error('Failed to load rooms config');
+      return;
+    }
+    createBricks();
+    initializeBall();
+    audioSystem.playBackgroundMusic();
+    gameReady = true;
+    gameLoop();
+  } catch (error) {
+    console.error('Initialization error:', error);
+  }
 }
 
 init();

@@ -1,5 +1,12 @@
 {
-  "totalRooms": 4,
+  "gameDefaults": {
+    "totalRooms": 4,
+    "initialLives": 3,
+    "defaultPaddleWidth": 100,
+    "defaultBallRadius": 5,
+    "defaultSpeedIncrement": 0.3,
+    "defaultMaxSpeed": 8
+  },
   "rooms": [
     {
       "id": 1,

@@ -1,37 +1,21 @@
 # Room 2 - Brick Madness
 
-**Difficulté:** Medium  
-**Description:** Introduction aux briques spéciales. 30% bonus, 10% malus.
+**Difficulté:** Medium 🟡  
+**Objectif:** Découvrir les briques spéciales
 
-## Layout
+## Description
 
-```
-- 5 rangées de 8 briques
-- Mélange de briques standard et spéciales
-- Briques bonus (30%): MULTI (3 balles), PADDLE (agrandissement)
-- Briques malus (10%): TOUGH (2 touches)
-```
+La première room avec des briques spéciales! Environ 30% des briques sont bonus ou malus, mélangées aléatoirement dans le tableau.
 
-## Configuration JSON
-
-```json
-{
-  "name": "Brick Madness",
-  "difficulty": 2,
-  "rows": 5,
-  "bricksPerRow": 8,
-  "ballSpeed": 4.5,
-  "paddleWidth": 100,
-  "specialBricks": [
-    {"type": "MULTI", "chance": 0.15},
-    {"type": "PADDLE", "chance": 0.15},
-    {"type": "TOUGH", "chance": 0.10}
-  ]
-}
-```
+- 40 briques en 5 rangées
+- Briques bonus : MULTI (3 balles), PADDLE (agrandir la raquette)
+- Briques malus : TOUGH (2 touches)
+- Vitesse légèrement augmentée : 4.5 unités
+- Accélération progressive commence
 
 ## Astuces
 
-- Les briques MULTI créent 3 balles
-- Les briques PADDLE agrandissent temporairement la raquette
-- Les briques TOUGH nécessitent 2 touches pour être cassées
+- Les briques MULTI sont très utiles! Essaie de les chercher
+- Les briques PADDLE agrandissent ta raquette temporairement
+- Les briques TOUGH sont marquées d'un "2" - elles demandent 2 coups
+- La vitesse augmente progressivement chaque 3 briques cassées

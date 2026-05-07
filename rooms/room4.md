@@ -1,42 +1,29 @@
 # Room 4 - Chaos Mode
 
-**Difficulté:** Very Hard  
-**Description:** Chaos complet! Beaucoup de briques spéciales, beaucoup d'accélération.
+**Difficulté:** Very Hard 🔴🔴  
+**Objectif:** Survie dans le chaos! Le dernier défi.
 
-## Layout
+## Description
 
-```
-- 6 rangées de 10 briques (60 briques au total)
-- Briques bonus (30%): MULTI, PADDLE, STICKY, SLOW (ralentit la balle)
-- Briques malus (20%): TOUGH (2 touches), ARMORED (3 touches)
-- Accélération rapide de la balle
-```
+Mode chaotique avec 60 briques et une accélération extrême. Toutes les mécaniques du jeu sont intensifiées. C'est le test ultime de maîtrise.
 
-## Configuration JSON
-
-```json
-{
-  "name": "Chaos Mode",
-  "difficulty": 4,
-  "rows": 6,
-  "bricksPerRow": 10,
-  "ballSpeed": 5.5,
-  "paddleWidth": 80,
-  "speedIncrement": 0.75,
-  "speedIncrement.maxSpeed": 12,
-  "specialBricks": [
-    {"type": "MULTI", "chance": 0.15},
-    {"type": "PADDLE", "chance": 0.08},
-    {"type": "STICKY", "chance": 0.07},
-    {"type": "SLOW", "chance": 0.05},
-    {"type": "TOUGH", "chance": 0.12},
-    {"type": "ARMORED", "chance": 0.08}
-  ]
-}
-```
+- 60 briques en 6 rangées de 10
+- Toutes les briques spéciales activées
+- Briques bonus : MULTI, PADDLE, STICKY, SLOW (ralentir)
+- Briques malus : TOUGH (2 touches), ARMORED (3 touches)
+- Vitesse initiale élevée : 5.5 unités
+- Accélération très agressive : +0.75 tous les 3 briques
+- Vitesse max possible : 12 unités!
 
 ## Astuces
 
-- La brique SLOW réduit la vitesse de la balle
-- Essaie de casser les briques MULTI pour multiplier tes balles
-- Les STICKY sont tes amis pour reprendre le contrôle
+- La brique SLOW est précieuse ici - elle peut réduire la vitesse folle
+- Crée une stratégie : cherche d'abord les briques STICKY pour te donner du contrôle
+- Les briques MULTI sont clés pour couvrir plus de terrain rapidement
+- Garde ton sang-froid quand la vitesse augmente - chaque touche au mur réinitialise
+- Les briques PADDLE peuvent être sauvées pour les moments critiques
+- Avec 60 briques, la patience paie mieux que la rapidité
+
+## Récompense
+
+Complète Chaos Mode pour conquérir tous les tableaux! 🏆

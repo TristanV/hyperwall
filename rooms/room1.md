@@ -1,31 +1,19 @@
 # Room 1 - Warm Up
 
-**Difficulté:** Easy  
-**Description:** Introduction aux briques classiques. Apprendre les bases du jeu.
+**Difficulté:** Easy 🟢  
+**Objectif:** Apprendre les bases du jeu
 
-## Layout
+## Description
 
-```
-Configuration de briques:
-- 4 rangées de briques standard
-- Couleurs : Cyan, Magenta, Jaune, Vert
-- Pas de briques spéciales
-```
+Introduction aux mécaniques de base. Briques classiques uniquement, sans briques spéciales. Parfait pour comprendre les collisions, la physique de la balle et les contrôles.
 
-## Configuration JSON
+- 32 briques organisées en 4 rangées
+- Pas d'accélération progressive de la balle
+- Aucune brique spéciale
+- Vitesse stable : 4 unités
 
-```json
-{
-  "name": "Warm Up",
-  "difficulty": 1,
-  "rows": 4,
-  "bricksPerRow": 8,
-  "ballSpeed": 4,
-  "paddleWidth": 100,
-  "specialBricks": []
-}
-```
+## Astuces
 
-## Objectif
-
-Casser toutes les 32 briques pour passer au prochain niveau.
+- Prends ton temps pour maîtriser le contrôle de la raquette
+- Essaie de frapper la balle avec les côtés de la raquette pour obtenir un angle plus dramatique
+- Observe comment la balle rebondit sur les murs

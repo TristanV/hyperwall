@@ -35,10 +35,21 @@ Then open `http://localhost:8000/index.html`
 
 ```
 exo1/
-├── index.html          # Main game page
-├── style.css           # Retro styling
-└── game.js             # Game logic and Canvas rendering
+├── index.html                 # Main game page
+├── style.css                  # Retro styling
+├── game.js                    # Game logic and Canvas rendering
+├── rooms/
+│   ├── config.json            # Game defaults + room configurations
+│   ├── room1.md               # Room 1 description and tips
+│   ├── room2.md               # Room 2 description and tips
+│   ├── room3.md               # Room 3 description and tips
+│   └── room4.md               # Room 4 description and tips
+└── README.md                  # Project documentation
 ```
+
+**File Responsibilities:**
+- `rooms/config.json` — Game defaults and technical room specs (loaded at runtime)
+- `rooms/room*.md` — Player-facing descriptions, astuces, and objectives (documentation)
 
 ## Design Philosophy
 
