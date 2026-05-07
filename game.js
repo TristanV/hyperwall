@@ -345,7 +345,7 @@ function drawRoomComplete() {
   ctx.textAlign = 'center';
   ctx.fillText('ROOM COMPLETE!', canvas.width / 2, canvas.height / 2 - 40);
 
-  if (currentRoomId < roomsConfig.totalRooms) {
+  if (currentRoomId < roomsConfig.gameDefaults.totalRooms) {
     ctx.fillStyle = '#ff0';
     ctx.font = '24px Courier New';
     ctx.fillText(`SCORE: ${gameState.score}`, canvas.width / 2, canvas.height / 2 + 20);
@@ -460,6 +460,9 @@ function updateBalls() {
         if (gameState.lives <= 0) {
           gameState.gameOver = true;
           audioSystem.playSFX('game-over');
+        } else {
+          // Create a new ball for next attempt
+          initializeBall();
         }
       }
     }
@@ -572,7 +575,7 @@ function update() {
 // Reset and advance functions
 function resetGame() {
   if (gameState.won) {
-    if (currentRoomId < roomsConfig.totalRooms) {
+    if (currentRoomId < roomsConfig.gameDefaults.totalRooms) {
       currentRoomId++;
     } else {
       currentRoomId = 1;
