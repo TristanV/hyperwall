@@ -60,6 +60,14 @@ body {
   text-shadow: 2px 2px 0 #f0f;
 }
 
+.room-info {
+  font-size: 18px;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  color: #0f0;
+  text-shadow: 1px 1px 0 #f0f;
+}
+
 h1 {
   font-size: 48px;
   letter-spacing: 4px;

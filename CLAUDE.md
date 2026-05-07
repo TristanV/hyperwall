@@ -59,12 +59,16 @@ exo1/
 ## Iterative Development Plan
 
 Each iteration adds one meaningful feature:
-1. **Iteration 1** — Basic paddle, ball, and game loop with collision detection
-2. **Iteration 2** — Bricks and brick collision
-3. **Iteration 3** — Score, lives, and game over/win states
-4. **Iteration 4** — Enhanced controls and ball speed mechanics
-5. **Iteration 5** — Sound effects and visual feedback (optional)
-6. **Iteration 6** — Levels and difficulty progression
+1. ✅ **Iteration 1** — Basic paddle, ball, and game loop with collision detection
+2. ✅ **Iteration 2** — Bricks and brick collision
+3. ✅ **Iteration 3** — Score, lives, and game over/win states
+4. ✅ **Iteration 4** — Enhanced controls and ball speed mechanics
+5. ✅ **Iteration 5** — Sound effects and visual feedback
+6. ✅ **Iteration 6** — Room system with 4 progressively harder levels
+7. ✅ **Iteration 7** — Special bricks (bonus and malus) with random placement
+8. ✅ **Iteration 8** — Progressive ball speed and multiple balls
+9. **Iteration 9** — Additional rooms/levels
+10. **Iteration 10** — Leaderboard and high scores
 
 ## Important Context
 

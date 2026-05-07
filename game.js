@@ -2,14 +2,16 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Rooms configuration
+let roomsConfig = null;
+let currentRoomId = 1;
+
 // Audio system
 const audioSystem = {
   audioContext: null,
   musicEnabled: true,
   sfxEnabled: true,
   masterGain: null,
-  musicOscillator: null,
-  musicGain: null,
 
   init() {
     if (!this.audioContext) {
@@ -21,11 +23,11 @@ const audioSystem = {
   },
 
   playBackgroundMusic() {
-    if (!this.musicEnabled || this.musicOscillator) return;
+    if (!this.musicEnabled) return;
     this.init();
 
     const now = this.audioContext.currentTime;
-    const tempo = 0.5; // 500ms per beat
+    const tempo = 0.5;
 
     const melody = [
       { freq: 330, duration: tempo },
@@ -53,13 +55,6 @@ const audioSystem = {
     };
 
     playMelody(now);
-  },
-
-  stopBackgroundMusic() {
-    if (this.musicOscillator) {
-      this.musicOscillator.stop();
-      this.musicOscillator = null;
-    }
   },
 
   playTone(frequency, duration, startTime, attackTime, decayTime) {
@@ -95,6 +90,10 @@ const audioSystem = {
         this.playTone(600, 0.15, now, 0.02, 0.1);
         this.playTone(800, 0.1, now + 0.08, 0.02, 0.08);
         break;
+      case 'power-up':
+        this.playTone(700, 0.2, now, 0.05, 0.15);
+        this.playTone(900, 0.2, now + 0.1, 0.05, 0.15);
+        break;
       case 'win':
         this.playTone(523, 0.2, now, 0.05, 0.15);
         this.playTone(659, 0.2, now + 0.15, 0.05, 0.15);
@@ -112,8 +111,6 @@ const audioSystem = {
     this.musicEnabled = !this.musicEnabled;
     if (this.musicEnabled) {
       this.playBackgroundMusic();
-    } else {
-      this.stopBackgroundMusic();
     }
   },
 
@@ -130,23 +127,101 @@ const gameState = {
     width: 100,
     height: 10,
     speed: 6,
-    dx: 0
+    dx: 0,
+    defaultWidth: 100,
+    paddleSizeMultiplier: 1,
+    paddleSizeTimer: 0,
   },
-  ball: {
-    x: canvas.width / 2,
-    y: canvas.height - 50,
-    radius: 5,
-    dx: 4,
-    dy: -4,
-    speed: 4
-  },
+  balls: [],
   bricks: [],
   score: 0,
   lives: 3,
   isRunning: false,
   gameOver: false,
-  won: false
+  won: false,
+  brickTouchCount: 0,
+  currentBallSpeed: 4,
 };
+
+// Room system
+async function loadRoomsConfig() {
+  const response = await fetch('rooms/config.json');
+  roomsConfig = await response.json();
+}
+
+function getCurrentRoomConfig() {
+  return roomsConfig.rooms.find(r => r.id === currentRoomId);
+}
+
+function createBricks() {
+  gameState.bricks = [];
+  const config = getCurrentRoomConfig();
+  const brickWidth = 60;
+  const brickHeight = 15;
+  const brickPadding = 10;
+  const bricksPerRow = config.bricksPerRow;
+  const brickRows = config.rows;
+
+  const colors = ['#0ff', '#f0f', '#ff0', '#0f0', '#f00'];
+  const brickTypes = ['STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD'];
+
+  // Add special bricks
+  if (config.specialBricks.length > 0) {
+    config.specialBricks.forEach(special => {
+      const count = Math.floor((bricksPerRow * brickRows) * special.chance);
+      for (let i = 0; i < count; i++) {
+        brickTypes.push(special.type);
+      }
+    });
+
+    // Shuffle brickTypes
+    for (let i = brickTypes.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [brickTypes[i], brickTypes[j]] = [brickTypes[j], brickTypes[i]];
+    }
+  }
+
+  let typeIndex = 0;
+  for (let row = 0; row < brickRows; row++) {
+    for (let col = 0; col < bricksPerRow; col++) {
+      const x = 10 + col * (brickWidth + brickPadding);
+      const y = 40 + row * (brickHeight + brickPadding);
+      const type = brickTypes[typeIndex] || 'STANDARD';
+
+      let durability = 1;
+      let displayColor = colors[row % colors.length];
+
+      if (type === 'TOUGH') durability = 2;
+      if (type === 'ARMORED') durability = 3;
+
+      gameState.bricks.push({
+        x,
+        y,
+        width: brickWidth,
+        height: brickHeight,
+        active: true,
+        type,
+        color: displayColor,
+        durability,
+        maxDurability: durability,
+      });
+
+      typeIndex++;
+    }
+  }
+}
+
+function initializeBall() {
+  gameState.balls = [{
+    x: canvas.width / 2,
+    y: canvas.height - 50,
+    radius: 5,
+    dx: 4,
+    dy: -4,
+    stuck: false,
+  }];
+  gameState.currentBallSpeed = getCurrentRoomConfig().ballSpeed;
+}
 
 // Input handling
 const keys = {};
@@ -156,7 +231,16 @@ window.addEventListener('keydown', (e) => {
 
   if (e.key === ' ') {
     e.preventDefault();
-    if (!gameState.isRunning && !gameState.gameOver && !gameState.won) {
+    if (gameState.balls.some(b => b.stuck)) {
+      // Release stuck ball
+      gameState.balls.forEach(b => {
+        if (b.stuck) {
+          b.stuck = false;
+          b.dx = 4;
+          b.dy = -4;
+        }
+      });
+    } else if (!gameState.isRunning && !gameState.gameOver && !gameState.won) {
       gameState.isRunning = true;
     } else if (gameState.gameOver || gameState.won) {
       resetGame();
@@ -181,36 +265,8 @@ document.getElementById('soundToggle').addEventListener('click', () => {
   btn.classList.toggle('active', audioSystem.sfxEnabled);
 });
 
-// Initialize audio buttons state
 document.getElementById('musicToggle').classList.add('active');
 document.getElementById('soundToggle').classList.add('active');
-
-// Initialize bricks
-function createBricks() {
-  gameState.bricks = [];
-  const brickWidth = 60;
-  const brickHeight = 15;
-  const brickPadding = 10;
-  const bricksPerRow = Math.floor((canvas.width - 20) / (brickWidth + brickPadding));
-  const brickRows = 4;
-
-  const colors = ['#0ff', '#f0f', '#ff0', '#0f0', '#f00'];
-
-  for (let row = 0; row < brickRows; row++) {
-    for (let col = 0; col < bricksPerRow; col++) {
-      const x = 10 + col * (brickWidth + brickPadding);
-      const y = 40 + row * (brickHeight + brickPadding);
-      gameState.bricks.push({
-        x,
-        y,
-        width: brickWidth,
-        height: brickHeight,
-        active: true,
-        color: colors[row % colors.length]
-      });
-    }
-  }
-}
 
 // Drawing functions
 function drawPaddle() {
@@ -218,23 +274,22 @@ function drawPaddle() {
   ctx.fillStyle = '#0ff';
   ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
 
-  // Retro border effect
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 2;
   ctx.strokeRect(paddle.x, paddle.y, paddle.width, paddle.height);
 }
 
 function drawBall() {
-  const { ball } = gameState;
-  ctx.fillStyle = '#ff0';
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-  ctx.fill();
+  gameState.balls.forEach((ball) => {
+    ctx.fillStyle = ball.stuck ? '#f0f' : '#ff0';
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fill();
 
-  // Retro outline
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 1;
-  ctx.stroke();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
 }
 
 function drawBricks() {
@@ -244,7 +299,15 @@ function drawBricks() {
     ctx.fillStyle = brick.color;
     ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
 
-    // Retro border
+    // Draw durability indicator
+    if (brick.durability > 1) {
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px Courier New';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(brick.durability, brick.x + brick.width / 2, brick.y + brick.height / 2);
+    }
+
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.strokeRect(brick.x, brick.y, brick.width, brick.height);
@@ -254,6 +317,7 @@ function drawBricks() {
 function drawUI() {
   document.getElementById('score').textContent = gameState.score;
   document.getElementById('lives').textContent = gameState.lives;
+  document.getElementById('roomDisplay').textContent = `ROOM ${currentRoomId}: ${getCurrentRoomConfig().name}`;
 }
 
 function drawGameOver() {
@@ -267,23 +331,31 @@ function drawGameOver() {
 
   ctx.fillStyle = '#0ff';
   ctx.font = '24px Courier New';
-  ctx.fillText(`FINAL SCORE: ${gameState.score}`, canvas.width / 2, canvas.height / 2 + 20);
+  ctx.fillText(`SCORE: ${gameState.score}`, canvas.width / 2, canvas.height / 2 + 20);
   ctx.fillText('PRESS SPACE TO RESTART', canvas.width / 2, canvas.height / 2 + 80);
 }
 
-function drawWin() {
+function drawRoomComplete() {
   ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = '#0f0';
   ctx.font = 'bold 48px Courier New';
   ctx.textAlign = 'center';
-  ctx.fillText('YOU WIN!', canvas.width / 2, canvas.height / 2 - 40);
+  ctx.fillText('ROOM COMPLETE!', canvas.width / 2, canvas.height / 2 - 40);
 
-  ctx.fillStyle = '#ff0';
-  ctx.font = '24px Courier New';
-  ctx.fillText(`SCORE: ${gameState.score}`, canvas.width / 2, canvas.height / 2 + 20);
-  ctx.fillText('PRESS SPACE TO PLAY AGAIN', canvas.width / 2, canvas.height / 2 + 80);
+  if (currentRoomId < roomsConfig.totalRooms) {
+    ctx.fillStyle = '#ff0';
+    ctx.font = '24px Courier New';
+    ctx.fillText(`SCORE: ${gameState.score}`, canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillText('PRESS SPACE FOR NEXT ROOM', canvas.width / 2, canvas.height / 2 + 80);
+  } else {
+    ctx.fillStyle = '#ff0';
+    ctx.font = '24px Courier New';
+    ctx.fillText(`FINAL SCORE: ${gameState.score}`, canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillText('YOU BEAT THE GAME!', canvas.width / 2, canvas.height / 2 + 60);
+    ctx.fillText('PRESS SPACE TO RESTART', canvas.width / 2, canvas.height / 2 + 100);
+  }
 }
 
 function drawStartMessage() {
@@ -310,107 +382,172 @@ function updatePaddle() {
 
   paddle.x += paddle.dx;
 
-  // Keep paddle in bounds
   if (paddle.x < 0) paddle.x = 0;
   if (paddle.x + paddle.width > canvas.width) {
     paddle.x = canvas.width - paddle.width;
   }
+
+  // Update paddle size timer
+  if (paddle.paddleSizeTimer > 0) {
+    paddle.paddleSizeTimer--;
+    if (paddle.paddleSizeTimer === 0) {
+      paddle.width = paddle.defaultWidth;
+      paddle.paddleSizeMultiplier = 1;
+    }
+  }
 }
 
-function updateBall() {
-  const { ball, paddle } = gameState;
+function updateBalls() {
+  const { paddle, balls } = gameState;
+  const config = getCurrentRoomConfig();
 
-  if (!gameState.isRunning) {
-    // Stick ball to paddle when not running
-    ball.x = paddle.x + paddle.width / 2;
-    ball.y = paddle.y - ball.radius;
-    return;
-  }
-
-  ball.x += ball.dx;
-  ball.y += ball.dy;
-
-  // Wall collision (left and right)
-  if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
-    ball.dx = -ball.dx;
-    ball.x = Math.max(ball.radius, Math.min(canvas.width - ball.radius, ball.x));
-  }
-
-  // Wall collision (top)
-  if (ball.y - ball.radius < 0) {
-    ball.dy = -ball.dy;
-    ball.y = ball.radius;
-  }
-
-  // Paddle collision
-  if (
-    ball.y + ball.radius > paddle.y &&
-    ball.x > paddle.x &&
-    ball.x < paddle.x + paddle.width
-  ) {
-    ball.dy = -ball.dy;
-    ball.y = paddle.y - ball.radius;
-
-    // Add spin based on where ball hits paddle
-    const hitPos = (ball.x - paddle.x) / paddle.width;
-    ball.dx = (hitPos - 0.5) * 8;
-
-    // Play paddle hit sound
-    audioSystem.playSFX('paddle-hit');
-  }
-
-  // Bottom (lose life)
-  if (ball.y - ball.radius > canvas.height) {
-    gameState.lives--;
-    gameState.isRunning = false;
-
-    if (gameState.lives <= 0) {
-      gameState.gameOver = true;
-      audioSystem.playSFX('game-over');
+  balls.forEach((ball, ballIndex) => {
+    if (ball.stuck) {
+      ball.x = paddle.x + paddle.width / 2;
+      ball.y = paddle.y - ball.radius;
+      return;
     }
-  }
 
-  // Brick collision
-  gameState.bricks.forEach((brick) => {
-    if (!brick.active) return;
+    if (!gameState.isRunning) {
+      ball.x = paddle.x + paddle.width / 2;
+      ball.y = paddle.y - ball.radius;
+      return;
+    }
 
-    if (
-      ball.x > brick.x &&
-      ball.x < brick.x + brick.width &&
-      ball.y > brick.y &&
-      ball.y < brick.y + brick.height
-    ) {
-      brick.active = false;
-      gameState.score += 10;
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    // Wall collision (left and right)
+    if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+      ball.dx = -ball.dx;
+      ball.x = Math.max(ball.radius, Math.min(canvas.width - ball.radius, ball.x));
+      // Reset ball speed on wall hit
+      gameState.brickTouchCount = 0;
+      gameState.currentBallSpeed = config.ballSpeed;
+    }
+
+    // Wall collision (top)
+    if (ball.y - ball.radius < 0) {
       ball.dy = -ball.dy;
+      ball.y = ball.radius;
+    }
 
-      // Play brick break sound
-      audioSystem.playSFX('brick-break');
+    // Paddle collision
+    if (
+      ball.y + ball.radius > paddle.y &&
+      ball.x > paddle.x &&
+      ball.x < paddle.x + paddle.width
+    ) {
+      ball.dy = -ball.dy;
+      ball.y = paddle.y - ball.radius;
 
-      // Check win condition
-      if (gameState.bricks.every((b) => !b.active)) {
-        gameState.won = true;
+      const hitPos = (ball.x - paddle.x) / paddle.width;
+      ball.dx = (hitPos - 0.5) * 8;
+
+      audioSystem.playSFX('paddle-hit');
+    }
+
+    // Bottom (lose life)
+    if (ball.y - ball.radius > canvas.height) {
+      balls.splice(ballIndex, 1);
+      if (balls.length === 0) {
+        gameState.lives--;
         gameState.isRunning = false;
-        audioSystem.playSFX('win');
+        gameState.brickTouchCount = 0;
+        gameState.currentBallSpeed = config.ballSpeed;
+
+        if (gameState.lives <= 0) {
+          gameState.gameOver = true;
+          audioSystem.playSFX('game-over');
+        }
       }
     }
+
+    // Brick collision
+    gameState.bricks.forEach((brick) => {
+      if (!brick.active) return;
+
+      if (
+        ball.x > brick.x &&
+        ball.x < brick.x + brick.width &&
+        ball.y > brick.y &&
+        ball.y < brick.y + brick.height
+      ) {
+        ball.dy = -ball.dy;
+
+        // Handle special brick effects
+        brick.durability--;
+        if (brick.durability <= 0) {
+          brick.active = false;
+          gameState.score += 10;
+
+          // Increase ball speed after hitting brick
+          gameState.brickTouchCount++;
+          if (gameState.brickTouchCount % 3 === 0 && gameState.currentBallSpeed < config.maxSpeed) {
+            gameState.currentBallSpeed += config.speedIncrement;
+            // Normalize ball direction to maintain speed
+            const speed = gameState.currentBallSpeed;
+            const magnitude = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+            ball.dx = (ball.dx / magnitude) * speed;
+            ball.dy = (ball.dy / magnitude) * speed;
+          }
+
+          // Apply special brick effects
+          if (brick.type === 'MULTI') {
+            audioSystem.playSFX('power-up');
+            // Create 2 additional balls
+            for (let i = 0; i < 2; i++) {
+              gameState.balls.push({
+                x: brick.x + brick.width / 2,
+                y: brick.y + brick.height / 2,
+                radius: 5,
+                dx: (Math.random() - 0.5) * 8,
+                dy: -4,
+                stuck: false,
+              });
+            }
+          } else if (brick.type === 'PADDLE') {
+            audioSystem.playSFX('power-up');
+            gameState.paddle.width = gameState.paddle.defaultWidth * 1.5;
+            gameState.paddle.paddleSizeMultiplier = 1.5;
+            gameState.paddle.paddleSizeTimer = 300; // 5 seconds at 60 FPS
+          } else if (brick.type === 'STICKY') {
+            audioSystem.playSFX('power-up');
+            ball.stuck = true;
+          } else if (brick.type === 'SLOW') {
+            audioSystem.playSFX('power-up');
+            gameState.currentBallSpeed = Math.max(3, gameState.currentBallSpeed - 1);
+            const magnitude = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+            ball.dx = (ball.dx / magnitude) * gameState.currentBallSpeed;
+            ball.dy = (ball.dy / magnitude) * gameState.currentBallSpeed;
+          } else {
+            audioSystem.playSFX('brick-break');
+          }
+        } else {
+          audioSystem.playSFX('brick-break');
+        }
+
+        // Check win condition
+        if (gameState.bricks.every((b) => !b.active)) {
+          gameState.won = true;
+          gameState.isRunning = false;
+          audioSystem.playSFX('win');
+        }
+      }
+    });
   });
 }
 
 function render() {
-  // Clear canvas with retro black background
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw game elements
   drawBricks();
-  drawBall();
+  drawBalls();
   drawPaddle();
 
-  // Draw UI
   drawUI();
 
-  // Draw messages
   if (!gameState.isRunning && !gameState.gameOver && !gameState.won) {
     drawStartMessage();
   }
@@ -420,30 +557,38 @@ function render() {
   }
 
   if (gameState.won) {
-    drawWin();
+    drawRoomComplete();
   }
 }
 
 function update() {
   if (!gameState.gameOver && !gameState.won) {
     updatePaddle();
-    updateBall();
+    updateBalls();
   }
 }
 
-// Reset game
+// Reset and advance functions
 function resetGame() {
-  gameState.score = 0;
+  if (gameState.won) {
+    if (currentRoomId < roomsConfig.totalRooms) {
+      currentRoomId++;
+    } else {
+      currentRoomId = 1;
+    }
+  }
+
   gameState.lives = 3;
   gameState.isRunning = false;
   gameState.gameOver = false;
   gameState.won = false;
-  gameState.ball.x = canvas.width / 2;
-  gameState.ball.y = canvas.height - 50;
-  gameState.ball.dx = 4;
-  gameState.ball.dy = -4;
-  gameState.paddle.x = canvas.width / 2 - 50;
+  gameState.brickTouchCount = 0;
+  gameState.paddle.width = gameState.paddle.defaultWidth;
+  gameState.paddle.x = canvas.width / 2 - gameState.paddle.width / 2;
+  gameState.paddle.paddleSizeTimer = 0;
+
   createBricks();
+  initializeBall();
   audioSystem.playBackgroundMusic();
 }
 
@@ -455,6 +600,12 @@ function gameLoop() {
 }
 
 // Initialize and start
-createBricks();
-audioSystem.playBackgroundMusic();
-gameLoop();
+async function init() {
+  await loadRoomsConfig();
+  createBricks();
+  initializeBall();
+  audioSystem.playBackgroundMusic();
+  gameLoop();
+}
+
+init();

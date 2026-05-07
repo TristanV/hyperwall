@@ -1,0 +1,70 @@
+{
+  "totalRooms": 4,
+  "rooms": [
+    {
+      "id": 1,
+      "name": "Warm Up",
+      "difficulty": 1,
+      "rows": 4,
+      "bricksPerRow": 8,
+      "ballSpeed": 4,
+      "paddleWidth": 100,
+      "speedIncrement": 0.3,
+      "maxSpeed": 8,
+      "specialBricks": []
+    },
+    {
+      "id": 2,
+      "name": "Brick Madness",
+      "difficulty": 2,
+      "rows": 5,
+      "bricksPerRow": 8,
+      "ballSpeed": 4.5,
+      "paddleWidth": 100,
+      "speedIncrement": 0.4,
+      "maxSpeed": 9,
+      "specialBricks": [
+        {"type": "MULTI", "chance": 0.15},
+        {"type": "PADDLE", "chance": 0.15},
+        {"type": "TOUGH", "chance": 0.10}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Speed Challenge",
+      "difficulty": 3,
+      "rows": 6,
+      "bricksPerRow": 8,
+      "ballSpeed": 5,
+      "paddleWidth": 90,
+      "speedIncrement": 0.5,
+      "maxSpeed": 10,
+      "specialBricks": [
+        {"type": "MULTI", "chance": 0.12},
+        {"type": "PADDLE", "chance": 0.08},
+        {"type": "STICKY", "chance": 0.05},
+        {"type": "TOUGH", "chance": 0.10},
+        {"type": "ARMORED", "chance": 0.05}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Chaos Mode",
+      "difficulty": 4,
+      "rows": 6,
+      "bricksPerRow": 10,
+      "ballSpeed": 5.5,
+      "paddleWidth": 80,
+      "speedIncrement": 0.75,
+      "maxSpeed": 12,
+      "specialBricks": [
+        {"type": "MULTI", "chance": 0.15},
+        {"type": "PADDLE", "chance": 0.08},
+        {"type": "STICKY", "chance": 0.07},
+        {"type": "SLOW", "chance": 0.05},
+        {"type": "TOUGH", "chance": 0.12},
+        {"type": "ARMORED", "chance": 0.08}
+      ]
+    }
+  ]
+}
